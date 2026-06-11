@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIG ONE — Revisione Schede Prodotto</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #F4F4F2;
+  color: #111;
+  font-size: 13px;
+}
+
+/* ── HEADER ── */
+.header {
+  background: #111;
+  color: #fff;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+.header-sub { font-size: 11px; opacity: .6; margin-top: 2px; }
+.save-badge {
+  font-size: 11px; font-weight: 600; background: #639922; color: #fff;
+  padding: 4px 12px; border-radius: 20px; opacity: 0; transition: opacity .3s;
+}
+.save-badge.show { opacity: 1; }
+
+/* ── PROGRESS ── */
+.progress-wrap {
+  background: #fff;
+  padding: 16px 32px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.progress-bar-outer {
+  flex: 1; height: 10px; background: #E8E8E8;
+  border-radius: 5px; overflow: hidden;
+}
+.progress-bar-inner {
+  height: 100%; background: #111; border-radius: 5px;
+  transition: width .4s ease;
+}
+.progress-label { font-size: 22px; font-weight: 700; min-width: 50px; text-align: right; }
+.progress-stats { font-size: 11px; color: #666; white-space: nowrap; }
+
+/* ── LEGENDA ── */
+.legenda-wrap {
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+.legenda-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 32px; background: none; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: #111; border-bottom: 1px solid transparent;
+  transition: background .15s;
+}
+.legenda-toggle:hover { background: #F8F8F8; }
+.legenda-toggle-icon { font-size: 11px; color: #888; }
+.legenda-body { padding: 16px 32px; display: none; }
+.legenda-body.open { display: block; }
+
+/* Come leggere la tabella */
+.legenda-states {
+  display: flex; gap: 28px; margin-bottom: 20px;
+  padding: 12px 16px; background: #F8F8F8; border-radius: 8px;
+  flex-wrap: wrap;
+}
+.state-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #444; }
+.cell-example {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.ex-done { background: #D4EDDA; color: #2E7D32; }
+.ex-miss { background: #FFF; border: 2px solid #DDD; color: #BBB; }
+.ex-fixed { background: #D4E6FF; color: #1565C0; }
+
+/* Griglia criteri */
+.criteri-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.criterio-card {
+  border: 1px solid #E8E8E8; border-radius: 8px;
+  padding: 10px 14px; background: #FAFAFA; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.criterio-card:hover { border-color: #111; background: #fff; }
+.criterio-card.active { border-color: #111; background: #fff; border-width: 2px; }
+.criterio-card-header {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: 12px; margin-bottom: 4px;
+}
+.criterio-num {
+  width: 20px; height: 20px; background: #111; color: #fff;
+  border-radius: 4px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.criterio-breve { font-size: 11px; color: #666; line-height: 1.4; }
+.criterio-detail {
+  display: none; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid #E8E8E8; font-size: 11px; line-height: 1.6;
+}
+.criterio-detail.open { display: block; }
+.detail-row { display: grid; grid-template-columns: 80px 1fr; gap: 6px 10px; }
+.detail-label { font-weight: 600; color: #888; }
+.detail-dove { font-family: 'SF Mono', Menlo, monospace; font-size: 10px; color: #1565C0; }
+
+/* ── FILTRI ── */
+.filtri-wrap {
+  background: #fff; padding: 12px 32px;
+  border-bottom: 1px solid #E8E8E8;
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+}
+.filtri-wrap input, .filtri-wrap select {
+  font-size: 12px; padding: 7px 12px; border-radius: 20px;
+  border: 1px solid #DDD; background: #F8F8F8; outline: none; color: #111;
+}
+.filtri-wrap input { min-width: 200px; flex: 1; }
+.filtri-wrap input:focus, .filtri-wrap select:focus { border-color: #111; background: #fff; }
+.vista-btns {
+  display: flex; gap: 3px; background: #F0F0F0;
+  padding: 3px; border-radius: 20px;
+}
+.vista-btn {
+  font-size: 11px; padding: 5px 12px; border-radius: 16px;
+  border: none; cursor: pointer; font-weight: 500; color: #666;
+  background: transparent; transition: all .15s;
+}
+.vista-btn.active { background: #111; color: #fff; }
+.filtri-count { font-size: 11px; color: #888; margin-left: 4px; }
+
+/* ── TABELLA ── */
+.table-wrap { overflow-x: auto; padding: 0 0 60px 0; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1100px;
+}
+
+thead tr {
+  background: #F8F8F8;
+  border-bottom: 2px solid #111;
+}
+thead th {
+  padding: 10px 8px; text-align: center;
+  font-size: 10px; font-weight: 700;
+  color: #444; text-transform: uppercase;
+  letter-spacing: .04em; white-space: nowrap;
+  position: sticky; top: 0; background: #F8F8F8; z-index: 5;
+  border-bottom: 2px solid #111;
+}
+thead th.th-nome {
+  text-align: left; padding-left: 16px; min-width: 220px;
+  position: sticky; top: 0; left: 0; z-index: 10;
+  background: #F8F8F8;
+}
+thead th.th-cat { text-align: left; min-width: 110px; }
+thead th.th-prezzo { text-align: right; min-width: 60px; padding-right: 12px; }
+thead th.th-criteri { min-width: 68px; cursor: help; }
+thead th.th-criteri:hover { background: #EFEFEF; }
+thead th.th-mancanti { min-width: 72px; }
+
+/* COLONNA NUMERO */
+.col-num {
+  width: 24px; text-align: center;
+  font-size: 10px; color: #CCC; font-weight: 500;
+  position: sticky; left: 0; background: inherit; z-index: 1;
+  padding-left: 8px;
+}
+
+tbody tr {
+  border-bottom: 1px solid #EAEAEA;
+  transition: background .1s;
+}
+tbody tr:hover { background: #F5F5F3 !important; }
+tbody tr.row-done { background: #F0F8F0; }
+tbody tr.row-done:hover { background: #E8F5E8 !important; }
+
+td {
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+td.td-nome {
+  padding: 8px 12px 8px 16px;
+  text-align: left;
+  position: sticky; left: 0;
+  background: inherit; z-index: 1;
+  border-right: 1px solid #EAEAEA;
+}
+.td-nome a {
+  color: #111; text-decoration: none; font-weight: 500;
+  font-size: 12px; line-height: 1.4; display: block;
+}
+.td-nome a:hover { text-decoration: underline; color: #333; }
+td.td-cat { text-align: left; font-size: 11px; color: #666; white-space: nowrap; }
+td.td-prezzo { text-align: right; padding-right: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+
+/* ── CELLE CRITERI ── */
+.cella {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+  transition: transform .1s;
+}
+.cella-done {
+  background: #D4EDDA; color: #2E7D32;
+  cursor: default;
+}
+.cella-miss {
+  background: #FFF; border: 2px dashed #CCCCCC; color: #CCCCCC;
+  cursor: pointer;
+}
+.cella-miss:hover {
+  border-color: #999; color: #999;
+  transform: scale(1.1);
+}
+.cella-fixed {
+  background: #D4E6FF; color: #1565C0; border: 2px solid #1565C0;
+  cursor: pointer;
+}
+.cella-fixed:hover { opacity: .8; transform: scale(1.05); }
+
+/* ── CONTATORE MANCANTI ── */
+.badge-mancanti {
+  display: inline-block; padding: 3px 9px;
+  border-radius: 12px; font-size: 12px; font-weight: 700;
+}
+.badge-0 { background: #D4EDDA; color: #2E7D32; }
+.badge-low { background: #FFF3CD; color: #856404; }
+.badge-mid { background: #FFE0B2; color: #E65100; }
+.badge-high { background: #FFCDD2; color: #C62828; }
+
+.pronto-badge {
+  font-size: 11px; font-weight: 600; color: #2E7D32; white-space: nowrap;
+}
+
+/* ── FOOTER ── */
+.footer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #111; color: rgba(255,255,255,.6);
+  font-size: 11px; padding: 8px 32px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.footer strong { color: #fff; }
+
+/* ── PULSANTE AGGIUNGI ── */
+.btn-aggiungi {
+  background: #111; color: #fff; border: none;
+  padding: 7px 16px; border-radius: 20px; cursor: pointer;
+  font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;
+  transition: background .15s; white-space: nowrap;
+}
+.btn-aggiungi:hover { background: #333; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 1000; display: none; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 12px; width: 100%;
+  max-width: 520px; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+.modal-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid #EAEAEA;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: 16px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; cursor: pointer; font-size: 20px;
+  color: #888; line-height: 1; padding: 4px; border-radius: 4px;
+}
+.modal-close:hover { background: #F0F0F0; color: #111; }
+.modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.modal-note {
+  background: #F8F8F8; border-radius: 8px; padding: 10px 14px;
+  font-size: 11px; color: #666; line-height: 1.5; border-left: 3px solid #DDD;
+}
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 12px; font-weight: 600; color: #444; }
+.form-group input, .form-group select {
+  font-size: 13px; padding: 9px 12px; border: 1.5px solid #DDD;
+  border-radius: 8px; outline: none; color: #111; background: #fff;
+  transition: border-color .15s;
+}
+.form-group input:focus, .form-group select:focus { border-color: #111; }
+.form-group .hint { font-size: 11px; color: #999; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-footer {
+  padding: 16px 24px; border-top: 1px solid #EAEAEA;
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.btn-cancel {
+  background: none; border: 1.5px solid #DDD; color: #666;
+  padding: 8px 20px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 500; transition: all .15s;
+}
+.btn-cancel:hover { border-color: #999; color: #333; }
+.btn-confirm {
+  background: #111; color: #fff; border: none;
+  padding: 8px 24px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 600; transition: background .15s;
+}
+.btn-confirm:hover { background: #333; }
+
+/* ── DELETE CUSTOM PRODUCT ── */
+.btn-delete-prod {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 4px; border: none;
+  background: #FFE0E0; color: #C62828; cursor: pointer;
+  font-size: 11px; font-weight: 700; margin-left: 6px;
+  vertical-align: middle; transition: background .15s;
+}
+.btn-delete-prod:hover { background: #FFCDD2; }
+.custom-tag {
+  font-size: 9px; font-weight: 700; background: #E3F2FD; color: #1565C0;
+  padding: 1px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>BIG ONE &mdash; Revisione Schede Prodotto</h1>
+    <div class="header-sub" id="headerSub">Caricamento...</div>
+  </div>
+  <div id="saveBadge" class="save-badge">&#10003; Salvato</div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="progress-bar-outer">
+    <div class="progress-bar-inner" id="progressBar" style="width:0%"></div>
+  </div>
+  <div>
+    <div class="progress-label" id="progressPct">0%</div>
+    <div class="progress-stats" id="progressStats"></div>
+  </div>
+</div>
+
+<!-- LEGENDA -->
+<div class="legenda-wrap">
+  <button class="legenda-toggle" onclick="toggleLegenda()">
+    <span>📖&nbsp;&nbsp;Legenda — cosa controllare e dove trovarlo in Shopify</span>
+    <span class="legenda-toggle-icon" id="legToggleIcon">▼ Apri</span>
+  </button>
+  <div class="legenda-body" id="legendaBody">
+
+    <!-- Come leggere le celle -->
+    <div class="legenda-states">
+      <div><strong style="font-size:12px">Come leggere le celle:</strong></div>
+      <div class="state-item">
+        <span class="cell-example ex-done">✓</span>
+        <div><strong>Già fatto</strong> in Shopify — nessuna azione richiesta</div>
+      </div>
+      <div class="state-item">
+        <span class="cell-example ex-miss">—</span>
+        <div><strong>Mancante</strong> — clicca dopo aver fatto la modifica in Shopify</div>
+      </div>
+      <div class="state-item">
+        <span class="cell-example ex-fixed">✓</span>
+        <div><strong>Segnato da te</strong> come fatto — clicca per annullare</div>
+      </div>
+    </div>
+
+    <!-- Criteri -->
+    <div class="criteri-grid" id="criteriGrid"></div>
+  </div>
+</div>
+
+<!-- FILTRI -->
+<div class="filtri-wrap">
+  <input type="text" id="searchInput" placeholder="🔍  Cerca prodotto..." oninput="applyFilters()">
+  <select id="catFilter" onchange="applyFilters()">
+    <option value="">Tutte le categorie</option>
+  </select>
+  <div class="vista-btns">
+    <button class="vista-btn active" onclick="setVista('tutti', this)">Tutti</button>
+    <button class="vista-btn" onclick="setVista('dafare', this)">Da fare</button>
+    <button class="vista-btn" onclick="setVista('ok', this)">Completati</button>
+  </div>
+  <span class="filtri-count" id="filtriCount"></span>
+  <button class="btn-aggiungi" onclick="openModal()">＋ Aggiungi prodotto</button>
+</div>
+
+<!-- TABELLA -->
+<div class="table-wrap">
+  <table id="mainTable">
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<!-- MODAL AGGIUNGI PRODOTTO -->
+<div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>➕ Aggiungi nuovo prodotto</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-note">
+        Il nuovo prodotto viene aggiunto in fondo alla lista. Tutti i campi partiranno come <strong>mancanti (—)</strong> e potrai spuntarli man mano che li completi in Shopify.
+      </div>
+      <div class="form-group">
+        <label for="f-nome">Nome prodotto *</label>
+        <input type="text" id="f-nome" placeholder='es. DRT KLASH 9 Edizione Speciale' oninput="autoHandle()">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="f-cat">Categoria *</label>
+          <select id="f-cat">
+            <option value="">— seleziona —</option>
+            <option>Abbigliamento casual</option>
+            <option>Abbigliamento da pioggia</option>
+            <option>Abbigliamento solare</option>
+            <option>Accessori</option>
+            <option>Accessori Esche</option>
+            <option>Canne</option>
+            <option>Esche</option>
+            <option>Gilet</option>
+            <option>Idee Regalo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="f-prezzo">Prezzo (€) *</label>
+          <input type="number" id="f-prezzo" placeholder="es. 49.90" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="f-handle">URL Shopify (handle)</label>
+        <input type="text" id="f-handle" placeholder='es. drt-klash-9-edizione-speciale'>
+        <span class="hint">Generato automaticamente dal nome — modificalo se necessario. Serve per il link diretto al prodotto.</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Annulla</button>
+      <button class="btn-confirm" onclick="addProduct()">Aggiungi prodotto</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>Clicca il nome di un prodotto per aprirlo su bigone-outdoor.com</span>
+  <span><strong>☁️ Progresso sincronizzato con il team</strong> — si aggiorna automaticamente ogni 45 secondi</span>
+</div>
+
+<script>
+// ── FIREBASE ──
+const FIREBASE_BASE = 'https://calendario-mattia-44023-default-rtdb.europe-west1.firebasedatabase.app/bigone-tracker';
+
+async function fbGet(path) {
+  try {
+    const res = await fetch(FIREBASE_BASE + path + '.json');
+    return (await res.json()) || null;
+  } catch(e) { return null; }
+}
+
+async function fbSet(path, data) {
+  try {
+    await fetch(FIREBASE_BASE + path + '.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch(e) { console.error('Salvataggio Firebase fallito', e); }
+}
+
+// ── DATI CRITERI ──
+const CRITERI = [
+  { k:"desc", label:"Descrizione",
+    breve:"Il testo principale della scheda prodotto.",
+    perche:"Senza descrizione il cliente non ha informazioni per decidere l'acquisto. Conta anche per il posizionamento su Google.",
+    dove:"Admin Shopify → Prodotti → seleziona il prodotto → campo Descrizione" },
+  { k:"seo_title", label:"Titolo SEO",
+    breve:"Il titolo che appare nei risultati di ricerca Google.",
+    perche:"Se vuoto, Google usa il titolo del prodotto senza ottimizzazione. Un titolo SEO specifico aumenta il traffico organico.",
+    dove:"Admin Shopify → Prodotti → seleziona prodotto → sezione SEO → Titolo pagina" },
+  { k:"seo_desc", label:"Descrizione SEO",
+    breve:"Il testo (max 160 caratteri) che appare sotto il titolo su Google.",
+    perche:"Più è chiaro e convincente, più persone cliccano sul tuo risultato invece che su quello dei concorrenti.",
+    dove:"Admin Shopify → Prodotti → seleziona prodotto → sezione SEO → Descrizione" },
+  { k:"alt_text", label:"Alt Text foto",
+    breve:"Testo alternativo che descrive le immagini del prodotto.",
+    perche:"Google non vede le immagini ma legge l'alt text. Migliora il posizionamento su Google Immagini e l'accessibilità del sito.",
+    dove:"Admin Shopify → Prodotti → clicca su ogni immagine → campo Alt text" },
+  { k:"caratteristica", label:"Caratteristiche",
+    breve:"Specifiche tecniche del prodotto: materiale, peso, misure, tecnologia.",
+    perche:"Per prodotti tecnici e premium, le specifiche sono decisive per convincere all'acquisto. Il cliente vuole sapere esattamente cosa sta comprando.",
+    dove:"Admin Shopify → Prodotti → sezione Metafield → Caratteristica prodotto" },
+  { k:"tab", label:"Schede info",
+    breve:"Sezioni informative sotto il bottone 'Aggiungi al carrello' (Specifiche, Taglie, Cura...)",
+    perche:"Organizzano le informazioni in modo chiaro e ordinato. Riducono le domande al servizio clienti.",
+    dove:"Admin Shopify → Prodotti → sezione Metafield → Titolo Tab 1 / Tab 2 / Tab 3" },
+  { k:"correlati", label:"Prod. correlati",
+    breve:"Prodotti suggeriti nella scheda ('Potrebbe interessarti anche...')",
+    perche:"Aumentano il valore medio dell'ordine. Attualmente solo 1 prodotto su 115 li ha configurati — grande opportunità di cross-selling.",
+    dove:"Admin Shopify → Prodotti → sezione Metafield → Prodotti correlati" },
+  { k:"sku", label:"Codice SKU",
+    breve:"Codice identificativo univoco di ogni variante del prodotto.",
+    perche:"Indispensabile per la gestione del magazzino, gli ordini e i report. Richiesto da molti sistemi di gestione.",
+    dove:"Admin Shopify → Prodotti → sezione Varianti → campo SKU per ogni variante" },
+  { k:"tags", label:"Tag categoria",
+    breve:"Parole chiave che determinano in quali categorie appare il prodotto.",
+    perche:"Senza i tag corretti il prodotto non appare nelle categorie quando l'utente naviga il sito. È la causa principale dei prodotti 'nascosti'.",
+    dove:"Admin Shopify → Prodotti → campo Tag (colonna destra in alto)" },
+  { k:"images3", label:"Min. 3 foto",
+    breve:"Il prodotto ha almeno 3 immagini da angolazioni diverse.",
+    perche:"Più foto = più fiducia = più vendite. Mostrare fronte, retro e dettaglio riduce i resi e aumenta il tasso di conversione.",
+    dove:"Admin Shopify → Prodotti → sezione Media → carica immagini aggiuntive" },
+  { k:"compare", label:"Prezzo barrato",
+    breve:"Il prezzo originale barrato accanto al prezzo scontato (es. ~~€82~~ €49).",
+    perche:"Comunica visivamente il risparmio. Senza il prezzo di confronto il cliente non capisce che il prodotto è in sconto.",
+    dove:"Admin Shopify → Prodotti → sezione Varianti → campo Confronta al prezzo" },
+];
+
+// ── DATI PRODOTTI ──
+const PRODOTTI_RAW = [
+  ["baum-bofu-55-copia","Baum Bofu Max","Esche",19,[1,0,0,0,0,1,0,0,1,1,0]],
+  ["baum-bofu-55","Baum Bofu 55","Esche",14,[1,0,0,0,0,1,0,0,1,1,0]],
+  ["occhiali-da-sole-orbit-lente-polarizzata","OCCHIALI DA SOLE \"ORBIT\"","Accessori",157,[0,0,0,0,1,1,0,1,1,1,0]],
+  ["hispano-lures-polaris-167","Hispano Lures POLARIS 167","Esche",30,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["baum-muon","Baum Muon","Esche",67,[1,0,0,0,0,1,0,0,1,1,0]],
+  ["swimbai-republic-sneak-attack-711","Swimbait Republic Sneak Attack 711","Canne",600,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["veeu-burno160-glide","Veeu Burno160 Glide","Esche",99,[1,0,0,0,0,1,0,0,0,0,0]],
+  ["veeu-snack-burno","Veeu Snack Burno","Esche",19.9,[1,0,0,0,0,1,0,1,0,0,0]],
+  ["veeu-lilpote-6-pezzi","Veeu Lilpote - 6 pezzi","Esche",12,[1,0,0,0,0,1,0,1,0,0,0]],
+  ["mystery-bass-box-large","MYSTERY \"BASS BOX\" - Large","Idee Regalo",250,[1,0,0,0,0,0,0,0,0,0,1]],
+  ["stinger-elite-xl","Stinger elite XL 4/0 & 4/0","Accessori Esche",11,[0,0,0,0,0,0,0,1,0,0,0]],
+  ["stinger-elite-large","Stinger elite Large 3/0 & 3/0","Accessori Esche",10,[0,0,0,0,0,0,0,1,0,0,0]],
+  ["stinger-elite-medium","Stinger elite Medium 2/0 & 2/0","Accessori Esche",8,[0,0,0,0,0,0,0,1,0,0,0]],
+  ["gator-fluro-carbon-leader","Gator Fluro Carbon Leader 70 cm","Accessori Esche",10,[0,0,0,0,0,0,0,1,0,0,0]],
+  ["gator-catfish-45-cm","Gator Catfish 45 cm","Esche",40,[0,0,0,0,0,1,0,1,0,0,0]],
+  ["gator-catfish-40cm","Gator Catfish 40 cm","Esche",29,[0,0,0,0,0,1,0,1,0,1,0]],
+  ["gator-catfish-35-cm","Gator Catfish 35 cm","Esche",22,[0,0,0,0,0,1,0,1,0,1,0]],
+  ["gator-catfish-25-cm","Gator Catfish 25 cm","Esche",14,[0,0,0,0,0,1,0,1,0,1,0]],
+  ["gator-catfish-11-cm","Gator Catfish 11 cm - 5 pezzi","Esche",7,[0,0,0,0,0,1,0,1,0,1,0]],
+  ["gator-deadbait-27-cm","Gator DeadBait 27 cm","Esche",12,[0,0,0,0,0,0,0,1,0,0,0]],
+  ["gator-deadbait-11-cm","Gator DeadBait 11 cm - 4 pezzi","Esche",8,[0,0,0,0,0,0,0,1,0,1,0]],
+  ["gilet-sherpa-thermo-pro-gilet","GILET SHERPA \"THERMO PRO GILET\"","Gilet",127,[1,0,0,0,1,1,0,0,0,1,0]],
+  ["giacca-sherpa-thermo-pro-pile","GIACCA SHERPA \"THERMO PRO PILE\"","Abbigliamento da pioggia",147,[1,0,0,0,1,1,0,0,0,1,0]],
+  ["sacca-porta-esche-tackle-box","BORSA PORTA OGGETTI \"TACKLE BAG\"","Accessori",67,[1,0,0,0,1,1,0,0,0,1,0]],
+  ["favorite-travalligator","Favorite Travel Alligator","Canne",274,[1,0,0,0,0,1,0,0,1,0,1]],
+  ["trucker-stitch-one","TRUCKER \"STITCH ONE\"","Abbigliamento casual",37,[1,0,0,0,1,1,0,0,1,0,0]],
+  ["snapback-ftcz","SNAPBACK \"FTCZ\"","Abbigliamento casual",39,[1,0,0,0,1,1,0,1,1,0,0]],
+  ["swimbait-republic-glideway-126","SWIMBAIT REPUBLIC GLIDEWAY 126","Esche",62,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["blackshad","BLACKSHAD","Esche",11.7,[1,0,0,0,0,1,0,0,1,1,0]],
+  ["gift-card","GIFT CARD","Idee Regalo",50,[1,0,0,0,0,0,0,0,0,1,0]],
+  ["madness-balam-200","Madness BALAM 200","Esche",129,[1,1,0,0,0,1,0,1,0,1,0]],
+  ["madness-balam-350","Madness BALAM 350","Esche",259,[1,1,0,0,0,1,0,1,0,0,0]],
+  ["grow-design-works-occhi-sostitutivi","GDW Occhi Sostitutivi","Accessori Esche",10,[1,0,0,0,0,0,0,1,0,0,0]],
+  ["grow-design-works-kit-riparazione","GDW Kit riparazione G-FLAG 150","Accessori Esche",10,[1,0,0,0,0,0,0,1,0,0,0]],
+  ["grow-design-works-g-flag-150","Grow Design Works G-FLAG 150","Esche",79,[1,0,0,0,0,1,0,1,0,1,0]],
+  ["grow-design-works-flag-170","Grow Design Works FLAG 170","Esche",77,[1,0,0,0,0,1,0,1,0,1,0]],
+  ["guscio-leggero-impermeabile-wading-ciclone-3l","GUSCIO LEGGERO \"WADING CICLONE 3L\"","Abbigliamento da pioggia",387,[1,1,0,0,1,1,0,1,0,1,0]],
+  ["blackbug-beetle-big-one-special","BLACKBUG BEETLE \"BIG ONE SPECIAL\"","Accessori Esche",42,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["gilet-tecnico-terra","GILET TECNICO \"TERRA\"","Gilet",247,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["veeu-twinpote","Veeu Twinpote (6 pezzi)","Esche",12,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["veeu-burno-vero-tail","Veeu Burno Vero Tail","Esche",23,[1,0,0,0,0,1,0,0,1,1,0]],
+  ["drt-tulala-remix","DRT TULALA REMIX","Canne",827,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-klash-ghost-bump-stopper","DRT GHOST BUMP STOPPER","Accessori Esche",23,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-x-engine-rc-living","DRT x Engine RC Living 10''","Accessori Esche",17,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-dc-shrimp","DRT DC SHRIMP 3.0 (6 pezzi)","Accessori Esche",14,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["drt-police","DRT POLICE","Esche",55,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["drt-lip-yabase","DRT LIP (2 pezzi) - Yabase","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,0,0]],
+  ["hispano-lures-polaris-147","HISPANO LURES POLARIS 147","Esche",24,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["calze-full-terry-socks","CALZE \"FULL TERRY SOCKS\"","Abbigliamento casual",19,[1,0,0,0,1,1,0,1,1,0,0]],
+  ["calze-terry-socks","CALZE \"TERRY SOCKS\"","Abbigliamento casual",17,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["mystery-pike-box-regular","MYSTERY \"PIKE BOX\" - Regular","Idee Regalo",150,[1,0,0,0,0,0,0,0,0,0,1]],
+  ["mystery-bass-box","MYSTERY \"BASS BOX\" - Regular","Idee Regalo",150,[1,0,0,0,0,0,0,0,0,0,1]],
+  ["mystery-pike-box","MYSTERY \"PIKE BOX\" - Large","Idee Regalo",250,[1,0,0,0,0,0,0,0,0,0,1]],
+  ["t-shirt-black-logo","T-SHIRT \"BLACK LOGO\" - REGULAR FIT","Abbigliamento casual",32,[1,0,0,0,1,1,0,0,0,0,0]],
+  ["t-shirt-claim-with-logo","T-SHIRT \"CLAIM WITH LOGO\" - REGULAR FIT","Abbigliamento casual",32,[1,0,0,0,1,1,0,0,0,0,0]],
+  ["felpa-certified-monster","FELPA \"CERTIFIED MONSTER\" - REGULAR FIT","Abbigliamento casual",87,[1,0,0,0,1,1,0,1,0,1,0]],
+  ["t-shirt-certified-monster","T-SHIRT \"CERTIFIED MONSTER\" - RELAXED FIT","Abbigliamento casual",42,[1,0,0,0,1,1,0,1,0,1,0]],
+  ["patch-modern-era","PATCH \"MODERN ERA\"","Abbigliamento casual",5,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["snapback-new-era","SNAPBACK PATCH \"MODERN ERA\"","Abbigliamento casual",39,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["swimbait-republic-spare-tail","SWIMBAIT REPUBLIC SPARE TAIL","Accessori Esche",6,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["polsini-in-neoprene-per-giacca-ame","POLSINI IN NEOPRENE \"AME\"","Accessori",37,[1,0,0,0,1,1,1,1,0,1,0]],
+  ["drt-tiny-klash-high","DRT TINY KLASH - HI FLOAT","Esche",107,[1,0,0,0,0,1,0,1,1,0,0]],
+  ["leggins-protezione-solare","LEGGINS PROTEZIONE SOLARE UPF50+","Abbigliamento solare",75,[1,0,0,0,1,1,0,0,1,1,0]],
+  ["fodero-portacanna-rod-glove","Fodero portacanna \"ROD GLOVE\"","Accessori",17,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["felpa-fishing-biodiversity","FELPA \"FISHING & BIODIVERSITY\" - REGULAR FIT","Abbigliamento casual",49.2,[1,0,0,0,1,1,0,1,1,1,1]],
+  ["t-shirt-fishing-biodiversity","T-SHIRT \"FISHING & BIODIVERSITY\" - REGULAR FIT","Abbigliamento casual",25.2,[1,0,0,0,1,1,0,1,1,1,1]],
+  ["pxs-guppi-sp-1-2","PXS GUPPI SP 1/2","Esche",14,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["pxs-guppi-3-8","PXS GUPPI SP 3/8","Esche",14,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["pxs-copper-head-blade-12g","PXS COPPER HEAD BLADE 12g","Esche",13.5,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["pxs-kagashi-worm","PXS KAGASHI WORM","Esche",10,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["pxs-raijin-shad-220","PXS Raijin Shad 220","Esche",14,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["felpa-angler-bowl","FELPA \"ANGLER BOWL\" - REGULAR FIT","Abbigliamento casual",87,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["t-shirt-angler-bowl","T-SHIRT \"ANGLER BOWL\" - RELAXED FIT","Abbigliamento casual",42,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["trucker-ftcz-mosquito","TRUCKER \"FTCZ MOSQUITO EDITION\"","Abbigliamento casual",35,[1,0,0,0,1,1,0,1,1,0,0]],
+  ["trucker-bold-patch","TRUCKER \"BOLD PATCH\"","Abbigliamento casual",37,[1,0,0,0,1,1,0,1,1,0,0]],
+  ["berretto-ice","BERRETTO \"ICE\"","Abbigliamento casual",32,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["drt-ghost","DRT GHOST","Esche",267,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-cramp-shad","DRT Cramp Shad 4,5'' (5 pezzi)","Accessori Esche",15,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["blacktail-rooster","BLACKTAIL ROOSTER \"BIG ONE SPECIAL\"","Accessori Esche",9.7,[1,0,0,0,0,1,0,1,1,0,0]],
+  ["blacktail-curly","BLACKTAIL CURLY \"BIG ONE SPECIAL\"","Accessori Esche",7.7,[1,1,1,0,0,1,0,1,1,0,0]],
+  ["blacktail-double","BLACKTAIL DOUBLE \"BIG ONE SPECIAL\"","Accessori Esche",7.7,[1,0,0,0,0,1,0,1,1,0,0]],
+  ["blacktail-shad","BLACKTAIL SHAD \"BIG ONE SPECIAL\"","Accessori Esche",8.7,[1,0,0,0,0,1,0,1,1,0,0]],
+  ["maglia-cappuccio-amazzonia","MAGLIA CAPPUCCIO UPF50+ \"AMAZZONIA\"","Abbigliamento solare",117,[1,0,0,0,1,1,0,0,1,1,0]],
+  ["favorite-alligator","FAVORITE ALLIGATOR","Canne",257,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["swimbait-republic-lead-stickers","SWIMBAIT REPUBLIC LEAD STICKERS (10 pezzi)","Accessori Esche",6,[1,0,0,0,0,0,0,1,1,0,0]],
+  ["pxs-zelus-craw-v2","PXS ZELUS CRAW V2 (8 pezzi)","Esche",12,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["drt-lip-ytmk","DRT LIP (2 pezzi) - YTMK","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,0,0]],
+  ["drt-lip-wide","DRT LIP (2 pezzi) - Wide","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,0,0]],
+  ["drt-lip-roll","DRT LIP (2 pezzi) - Roll","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,0,0]],
+  ["swimbait-republic-glideway-176","SWIMBAIT REPUBLIC GLIDEWAY 176","Esche",72,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-lip-spare","DRT LIP (2 pezzi) - Spare","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,0,0]],
+  ["drt-v-tail","DRT V-TAIL","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-transfer-tail","DRT TRANSFER TAIL","Accessori Esche",12,[1,0,0,0,0,0,0,1,1,1,0]],
+  ["drt-fink","DRT FINK 3,7'' (5 pezzi)","Accessori Esche",15,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["drt-joker","DRT JOKER","Esche",107,[1,0,0,0,0,1,0,1,1,0,0]],
+  ["drt-klash-9","DRT KLASH 9","Esche",127,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["drt-tiny-klash-low","DRT TINY KLASH - LOW","Esche",107,[1,0,0,0,0,1,0,1,1,1,0]],
+  ["buffer-protezione-solare","BUFFER PROTEZIONE SOLARE UPF50+","Abbigliamento solare",35,[1,1,1,0,1,1,0,0,1,1,0]],
+  ["maglia-protezione-solare","MAGLIA PROTEZIONE SOLARE UPF50+","Abbigliamento solare",87,[1,1,1,0,1,1,0,0,1,1,0]],
+  ["felpa-ftcz-mosquito-edition","FELPA \"FTCZ MOSQUITO EDITION\" - REGULAR FIT","Abbigliamento casual",57.4,[1,1,1,0,1,1,0,1,1,1,1]],
+  ["t-shirt-ftcz-mosquito","T-SHIRT \"FTCZ MOSQUITO EDITION\" - REGULAR FIT","Abbigliamento casual",42,[1,0,0,0,1,1,0,1,1,1,0]],
+  ["occhiali-da-sole-blinkers","OCCHIALI DA SOLE \"BLINKERS\"","Accessori",147,[0,1,1,0,1,1,0,1,1,1,0]],
+  ["borsa-porta-esche-wrap","SACCA PORTA ESCHE \"WRAP\"","Accessori",72,[1,1,1,0,1,1,0,1,1,1,0]],
+  ["calzettoni-performant","CALZE \"PERFORMANT\"","Abbigliamento casual",17,[1,1,1,0,1,1,0,1,1,1,0]],
+  ["nu-star-classic","NU STAR \"CLASSIC\"","Abbigliamento casual",42,[1,1,1,0,1,1,0,1,1,1,0]],
+  ["velvet-classic","VELVET \"CLASSIC\"","Abbigliamento casual",35,[1,1,1,0,1,1,0,1,1,0,0]],
+  ["snapback-bold","SNAPBACK \"BOLD\"","Abbigliamento casual",35,[1,1,1,0,1,1,0,1,1,1,0]],
+  ["snapback-classic","SNAPBACK \"CLASSIC\"","Abbigliamento casual",35,[1,1,1,0,1,1,0,1,1,1,0]],
+  ["t-shirt-picky","T-SHIRT \"PICKY\" - REGULAR FIT","Abbigliamento casual",25.9,[1,1,1,0,1,1,0,1,1,1,1]],
+  ["felpa-picky","FELPA \"PICKY\" - REGULAR FIT","Abbigliamento casual",53.9,[1,1,1,0,1,1,0,1,1,1,1]],
+  ["felpa-bold","FELPA \"BOLD\" - REGULAR FIT","Abbigliamento casual",53.9,[1,1,1,0,1,1,0,1,1,0,1]],
+  ["felpa-senza-cappuccio-bold","FELPA SENZA CAPPUCCIO \"BOLD\"","Abbigliamento casual",46.9,[1,1,1,0,1,1,0,1,1,1,1]],
+  ["felpa-senza-cappuccio-picky","FELPA SENZA CAPPUCCIO \"PICKY\"","Abbigliamento casual",46.9,[1,1,1,0,1,1,0,1,1,1,1]],
+  ["t-shirt-classic","T-SHIRT \"CLASSIC\" - REGULAR FIT","Abbigliamento casual",25.9,[1,1,1,0,1,1,0,1,1,1,1]],
+  ["t-shirt-basic","T-SHIRT \"BASIC\" - REGULAR FIT","Abbigliamento casual",22.4,[1,1,1,0,1,1,0,1,1,0,1]],
+];
+
+// Costruisci array prodotti
+const PRODOTTI = PRODOTTI_RAW.map(([h, title, cat, price, flags]) => {
+  const obj = { h, title, cat, price };
+  CRITERI.forEach((c, i) => obj[c.k] = !!flags[i]);
+  return obj;
+});
+
+// ── STATE ──
+let fixes = {};
+let vistaAttiva = 'tutti';
+let activeCriterio = null;
+
+async function loadData() {
+  const [savedFixes, savedCustom] = await Promise.all([
+    fbGet('/fixes'),
+    fbGet('/custom')
+  ]);
+  fixes = savedFixes || {};
+  customProdotti = Array.isArray(savedCustom) ? savedCustom : [];
+}
+
+async function save() {
+  await fbSet('/fixes', fixes);
+  const badge = document.getElementById('saveBadge');
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 1500);
+}
+
+// ── CALCOLI ──
+function countMissing(p) {
+  const pf = fixes[p.h] || {};
+  return CRITERI.filter(c => !p[c.k] && !pf[c.k]).length;
+}
+
+function isComplete(p) {
+  return countMissing(p) === 0;
+}
+
+// ── LEGENDA ──
+function buildLegenda() {
+  const grid = document.getElementById('criteriGrid');
+  grid.innerHTML = '';
+  CRITERI.forEach((c, idx) => {
+    const card = document.createElement('div');
+    card.className = 'criterio-card';
+    card.id = 'card-' + c.k;
+    card.innerHTML = `
+      <div class="criterio-card-header">
+        <span class="criterio-num">${idx + 1}</span>
+        ${c.label}
+      </div>
+      <div class="criterio-breve">${c.breve}</div>
+      <div class="criterio-detail" id="detail-${c.k}">
+        <div class="detail-row">
+          <span class="detail-label">Perché serve</span>
+          <span>${c.perche}</span>
+          <span class="detail-label">Dove si trova</span>
+          <span class="detail-dove">${c.dove}</span>
+        </div>
+      </div>`;
+    card.addEventListener('click', () => toggleCriterio(c.k));
+    grid.appendChild(card);
+  });
+}
+
+function toggleCriterio(k) {
+  if (activeCriterio === k) {
+    document.getElementById('detail-' + activeCriterio).classList.remove('open');
+    document.getElementById('card-' + activeCriterio).classList.remove('active');
+    activeCriterio = null;
+  } else {
+    if (activeCriterio) {
+      document.getElementById('detail-' + activeCriterio).classList.remove('open');
+      document.getElementById('card-' + activeCriterio).classList.remove('active');
+    }
+    activeCriterio = k;
+    document.getElementById('detail-' + k).classList.add('open');
+    document.getElementById('card-' + k).classList.add('active');
+  }
+}
+
+function toggleLegenda() {
+  const body = document.getElementById('legendaBody');
+  const icon = document.getElementById('legToggleIcon');
+  body.classList.toggle('open');
+  icon.textContent = body.classList.contains('open') ? '▲ Chiudi' : '▼ Apri';
+}
+
+// ── TABELLA ──
+function buildTable() {
+  // Thead
+  const thead = document.getElementById('tableHead');
+  let thHtml = `<tr>
+    <th class="th-nome">Prodotto</th>
+    <th class="th-cat">Categoria</th>
+    <th class="th-prezzo">Prezzo</th>`;
+  CRITERI.forEach((c, i) => {
+    thHtml += `<th class="th-criteri" title="${c.breve}" onclick="highlightColonna(${i})" id="th-${c.k}">${i+1}. ${c.label}</th>`;
+  });
+  thHtml += `<th class="th-mancanti">Mancanti</th></tr>`;
+  thead.innerHTML = thHtml;
+
+  // Tbody — ordine FISSO, mai cambia
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  // Popola categorie nel select
+  const cats = [...new Set(PRODOTTI.map(p => p.cat))].sort();
+  const catSel = document.getElementById('catFilter');
+  catSel.innerHTML = '<option value="">Tutte le categorie</option>';
+  cats.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    catSel.appendChild(o);
+  });
+
+  PRODOTTI.forEach((p) => {
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + p.h;
+    tr.setAttribute('data-h', p.h);
+    tr.setAttribute('data-cat', p.cat);
+    tr.setAttribute('data-title', p.title.toLowerCase());
+
+    // Nome
+    let tdNome = `<td class="td-nome">
+      <a href="https://bigone-outdoor.com/products/${p.h}" target="_blank">${p.title}</a>
+    </td>`;
+
+    // Cat, prezzo
+    let tds = `<td class="td-cat">${p.cat}</td>
+    <td class="td-prezzo">€${p.price.toFixed(2)}</td>`;
+
+    // Celle criteri
+    CRITERI.forEach(c => {
+      const already = p[c.k];
+      const pf = fixes[p.h] || {};
+      const fixed = !!pf[c.k];
+
+      if (already) {
+        tds += `<td><span class="cella cella-done" title="Già fatto in Shopify">✓</span></td>`;
+      } else if (fixed) {
+        tds += `<td><span class="cella cella-fixed" title="Segnato da te come fatto — clicca per annullare" onclick="toggleFix('${p.h}','${c.k}')" style="cursor:pointer">✓</span></td>`;
+      } else {
+        tds += `<td><span class="cella cella-miss" title="Mancante — clicca dopo aver fatto la modifica in Shopify" onclick="toggleFix('${p.h}','${c.k}')">—</span></td>`;
+      }
+    });
+
+    // Badge mancanti
+    const m = countMissing(p);
+    let badgeClass = m === 0 ? 'badge-0' : m <= 2 ? 'badge-low' : m <= 5 ? 'badge-mid' : 'badge-high';
+    let badgeContent = m === 0
+      ? `<span class="pronto-badge">✅ Pronto</span>`
+      : `<span class="badge-mancanti ${badgeClass}">${m}</span>`;
+
+    tds += `<td id="badge-${p.h}">${badgeContent}</td>`;
+
+    tr.innerHTML = tdNome + tds;
+    if (m === 0) tr.classList.add('row-done');
+    tbody.appendChild(tr);
+  });
+
+  updateProgress();
+  applyFilters();
+}
+
+function toggleFix(h, k) {
+  const pf = fixes[h] || {};
+  pf[k] = !pf[k];
+  fixes[h] = pf;
+  save();
+
+  // Aggiorna SOLO la cella cliccata — nessun movimento di riga
+  const row = document.getElementById('row-' + h);
+  const p = PRODOTTI.find(x => x.h === h);
+  const already = p[k];
+  const fixed = !!pf[k];
+
+  // Trova la cella giusta (indice del criterio)
+  const idx = CRITERI.findIndex(c => c.k === k);
+  // +3 perché ci sono 3 colonne prima (nome, cat, prezzo)
+  const cells = row.querySelectorAll('td');
+  const targetTd = cells[idx + 3];
+
+  if (already) return; // non dovrebbe succedere
+  if (fixed) {
+    targetTd.innerHTML = `<span class="cella cella-fixed" title="Segnato da te come fatto — clicca per annullare" onclick="toggleFix('${h}','${k}')" style="cursor:pointer">✓</span>`;
+  } else {
+    targetTd.innerHTML = `<span class="cella cella-miss" title="Mancante — clicca dopo aver fatto la modifica in Shopify" onclick="toggleFix('${h}','${k}')">—</span>`;
+  }
+
+  // Aggiorna badge mancanti della riga
+  const m = countMissing(p);
+  const badgeTd = document.getElementById('badge-' + h);
+  let badgeClass = m === 0 ? 'badge-0' : m <= 2 ? 'badge-low' : m <= 5 ? 'badge-mid' : 'badge-high';
+  badgeTd.innerHTML = m === 0
+    ? `<span class="pronto-badge">✅ Pronto</span>`
+    : `<span class="badge-mancanti ${badgeClass}">${m}</span>`;
+
+  // Aggiorna classe riga (colore) ma NON sposta la riga
+  if (m === 0) row.classList.add('row-done');
+  else row.classList.remove('row-done');
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = PRODOTTI.filter(p => isComplete(p)).length;
+  const tot = PRODOTTI.length;
+  const pct = Math.round(done / tot * 100);
+
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressStats').textContent = done + ' completati · ' + (tot - done) + ' ancora da fare';
+  document.getElementById('headerSub').textContent = tot + ' prodotti · ' + done + ' completati · ' + (tot - done) + ' da fare';
+}
+
+// ── FILTRI ──
+let vistaMode = 'tutti';
+
+function setVista(v, btn) {
+  vistaMode = v;
+  document.querySelectorAll('.vista-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const cat = document.getElementById('catFilter').value;
+  let visible = 0;
+
+  PRODOTTI.forEach(p => {
+    const row = document.getElementById('row-' + p.h);
+    if (!row) return;
+    const matchQ = !q || p.title.toLowerCase().includes(q);
+    const matchCat = !cat || p.cat === cat;
+    const complete = isComplete(p);
+    const matchVista = vistaMode === 'tutti' || (vistaMode === 'dafare' && !complete) || (vistaMode === 'ok' && complete);
+    const show = matchQ && matchCat && matchVista;
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  document.getElementById('filtriCount').textContent = visible + ' prodotti visibili';
+}
+
+function highlightColonna(idx) {
+  const k = CRITERI[idx].k;
+  toggleCriterio(k);
+  const leg = document.getElementById('legendaBody');
+  if (!leg.classList.contains('open')) {
+    leg.classList.add('open');
+    document.getElementById('legToggleIcon').textContent = '▲ Chiudi';
+  }
+  // Scroll alla legenda
+  document.querySelector('.legenda-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── PRODOTTI CUSTOM ──
+let customProdotti = [];
+
+async function saveCustomProducts() {
+  await fbSet('/custom', customProdotti);
+}
+
+// ── MODAL ──
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('f-nome').value = '';
+  document.getElementById('f-cat').value = '';
+  document.getElementById('f-prezzo').value = '';
+  document.getElementById('f-handle').value = '';
+  setTimeout(() => document.getElementById('f-nome').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function autoHandle() {
+  const nome = document.getElementById('f-nome').value;
+  const handle = nome.toLowerCase()
+    .replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+    .replace(/[ìíîï]/g,'i').replace(/[òóôõö]/g,'o')
+    .replace(/[ùúûü]/g,'u').replace(/[ñ]/g,'n')
+    .replace(/[^a-z0-9\s-]/g,'')
+    .replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  document.getElementById('f-handle').value = handle;
+}
+
+function addProduct() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const cat  = document.getElementById('f-cat').value.trim();
+  const prezzo = parseFloat(document.getElementById('f-prezzo').value);
+  const handle = document.getElementById('f-handle').value.trim() ||
+    ('custom-' + Date.now());
+
+  if (!nome) { alert('Inserisci il nome del prodotto.'); return; }
+  if (!cat)  { alert('Seleziona una categoria.'); return; }
+  if (isNaN(prezzo) || prezzo < 0) { alert('Inserisci un prezzo valido.'); return; }
+
+  // Controlla duplicati
+  if (PRODOTTI.find(p => p.h === handle) || customProdotti.find(p => p.h === handle)) {
+    alert('Esiste già un prodotto con questo handle URL. Modificalo e riprova.'); return;
+  }
+
+  const newProd = { h: handle, title: nome, cat, price: prezzo, custom: true };
+  CRITERI.forEach(c => newProd[c.k] = false); // tutti mancanti
+
+  customProdotti.push(newProd);
+  saveCustomProducts();
+  PRODOTTI.push(newProd);
+
+  // Aggiunge la riga in fondo senza ricostruire la tabella
+  appendProductRow(newProd);
+  updateProgress();
+  applyFilters();
+  closeModal();
+}
+
+function appendProductRow(p) {
+  const tbody = document.getElementById('tableBody');
+  const tr = document.createElement('tr');
+  tr.id = 'row-' + p.h;
+  tr.setAttribute('data-h', p.h);
+  tr.setAttribute('data-cat', p.cat);
+  tr.setAttribute('data-title', p.title.toLowerCase());
+
+  const pf = fixes[p.h] || {};
+  const m = countMissing(p);
+
+  let tdNome = `<td class="td-nome">
+    <a href="https://bigone-outdoor.com/products/${p.h}" target="_blank">${p.title}</a>
+    <span class="custom-tag">NUOVO</span>
+    <button class="btn-delete-prod" onclick="deleteCustomProduct('${p.h}')" title="Rimuovi questo prodotto">✕</button>
+  </td>`;
+
+  let tds = `<td class="td-cat">${p.cat}</td>
+  <td class="td-prezzo">€${p.price.toFixed(2)}</td>`;
+
+  CRITERI.forEach(c => {
+    const fixed = !!pf[c.k];
+    if (fixed) {
+      tds += `<td><span class="cella cella-fixed" title="Segnato da te come fatto — clicca per annullare" onclick="toggleFix('${p.h}','${c.k}')" style="cursor:pointer">✓</span></td>`;
+    } else {
+      tds += `<td><span class="cella cella-miss" title="Mancante — clicca dopo aver fatto la modifica in Shopify" onclick="toggleFix('${p.h}','${c.k}')">—</span></td>`;
+    }
+  });
+
+  let badgeClass = m === 0 ? 'badge-0' : m <= 2 ? 'badge-low' : m <= 5 ? 'badge-mid' : 'badge-high';
+  tds += `<td id="badge-${p.h}">${m === 0 ? '<span class="pronto-badge">✅ Pronto</span>' : '<span class="badge-mancanti ' + badgeClass + '">' + m + '</span>'}</td>`;
+
+  tr.innerHTML = tdNome + tds;
+  if (m === 0) tr.classList.add('row-done');
+  tbody.appendChild(tr);
+}
+
+function deleteCustomProduct(h) {
+  if (!confirm('Sei sicuro di voler rimuovere questo prodotto dalla lista?')) return;
+  customProdotti = customProdotti.filter(p => p.h !== h);
+  saveCustomProducts();
+  const idx = PRODOTTI.findIndex(p => p.h === h);
+  if (idx !== -1) PRODOTTI.splice(idx, 1);
+  const row = document.getElementById('row-' + h);
+  if (row) row.remove();
+  updateProgress();
+  applyFilters();
+}
+
+// ── INIT ──
+(async () => {
+  await loadData();
+  buildLegenda();
+  buildTable();
+  customProdotti.forEach(p => {
+    if (!PRODOTTI.find(x => x.h === p.h)) PRODOTTI.push(p);
+    appendProductRow(p);
+  });
+  updateProgress();
+  applyFilters();
+
+  // Auto-sincronizzazione ogni 45 secondi
+  setInterval(async () => {
+    const [newFixes, newCustom] = await Promise.all([
+      fbGet('/fixes'),
+      fbGet('/custom')
+    ]);
+    if (JSON.stringify(newFixes) !== JSON.stringify(fixes)) {
+      fixes = newFixes || {};
+      buildTable();
+      customProdotti.forEach(p => {
+        if (!PRODOTTI.find(x => x.h === p.h)) PRODOTTI.push(p);
+        appendProductRow(p);
+      });
+      updateProgress();
+      applyFilters();
+    }
+  }, 45000);
+})();
+</script>
+</body>
+</html>
